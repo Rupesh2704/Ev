@@ -5,33 +5,19 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
-
 const app = express();
 app.use(express.json());
-
-// CORS - Allow only your frontend domain
-const allowedOrigins = [process.env.FRONTEND_URL || "http://localhost:3000"];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
-}));
+app.use(cors()); // Enable CORS for frontend requests
 
 // ✅ MongoDB Connection - Use Environment Variable
-mongoose.connect(process.env.MONGO_URI, {
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.error("❌ MongoDB Connection Failed:", err.message));
 
-// User Schema & Model
+// ✅ User Schema & Model
 const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
@@ -39,13 +25,13 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", UserSchema);
 
-// Task Schema & Model
+// ✅ Task Schema & Model
 const Task = mongoose.model("Task", new mongoose.Schema({
   userId: String,
   title: String,
 }));
 
-// Middleware to verify JWT token
+// ✅ Middleware to verify JWT token
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -62,12 +48,12 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// ✅ Health Check Route (For Render)
+// ✅ Health Check Route
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "Server is running 🚀" });
 });
 
-// User Signup Route
+// ✅ User Signup Route
 app.post("/api/signup", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -87,7 +73,7 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-// User Login Route
+// ✅ User Login Route
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -109,31 +95,31 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Get All Tasks for Logged-in User
+// ✅ Get All Tasks for Logged-in User
 app.get("/api/tasks", verifyToken, async (req, res) => {
   const tasks = await Task.find({ userId: req.userId });
   res.json(tasks);
 });
 
-// Create a New Task
+// ✅ Create a New Task
 app.post("/api/tasks", verifyToken, async (req, res) => {
   const task = new Task({ userId: req.userId, title: req.body.title });
   await task.save();
   res.json(task);
 });
 
-// Update a Task by ID
+// ✅ Update a Task by ID
 app.put("/api/tasks/:id", verifyToken, async (req, res) => {
   const task = await Task.findByIdAndUpdate(req.params.id, { title: req.body.title }, { new: true });
   res.json(task);
 });
 
-// Delete a Task by ID
+// ✅ Delete a Task by ID
 app.delete("/api/tasks/:id", verifyToken, async (req, res) => {
   await Task.findByIdAndDelete(req.params.id);
   res.json({ message: "Task deleted" });
 });
 
-// ✅ Use Environment Variable for Port
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
